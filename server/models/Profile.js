@@ -28,6 +28,14 @@ const profileSchema = new mongoose.Schema({
     tracks: [{ id: String, name: String, images: [String], uri: String }],
     playlists: [{ id: String, name: String, images: [String], uri: String }]
   },
+  photos: [{
+    url: String,
+    publicId: String,
+    isMain: {
+      type: Boolean,
+      default: false
+    }
+  }],
   onboardingStep: {
     type: Number,
     default: 1,

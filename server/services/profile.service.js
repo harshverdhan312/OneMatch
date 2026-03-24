@@ -45,6 +45,34 @@ class ProfileService {
     return profile;
   }
 
+  async updateProfile(userId, updateData) {
+    const profile = await this.getProfile(userId);
+    
+    if (updateData.basicInfo) profile.basicInfo = updateData.basicInfo;
+    if (updateData.preferences) profile.preferences = updateData.preferences;
+    if (updateData.interests) profile.interests = updateData.interests;
+    if (updateData.questions) profile.questions = updateData.questions;
+
+    await profile.save();
+    return profile;
+  }
+
+  async addPhoto(userId, photoData) {
+    const profile = await this.getProfile(userId);
+    const isFirstPhoto = !profile.photos || profile.photos.length === 0;
+    
+    if (!profile.photos) profile.photos = [];
+
+    profile.photos.push({
+      url: photoData.url,
+      publicId: photoData.publicId,
+      isMain: isFirstPhoto
+    });
+
+    await profile.save();
+    return profile;
+  }
+
   computeCompleteness(profile) {
     const hasBasicInfo = !!(profile.basicInfo && profile.basicInfo.name && profile.basicInfo.city);
     const hasPreferences = !!(profile.preferences && profile.preferences.genderPreference);
