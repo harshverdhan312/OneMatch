@@ -8,5 +8,6 @@ const auth = requireAuth || require('../middleware/auth.middleware');
 
 router.get('/current', auth, matchController.getCurrentMatch.bind(matchController));
 router.post('/:id/respond', auth, matchController.respondToMatch.bind(matchController));
+router.post('/wait', auth, matchController.enterWaitingPool.bind(matchController));
 
 module.exports = router;

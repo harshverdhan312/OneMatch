@@ -36,6 +36,18 @@ class MatchController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  async enterWaitingPool(req, res) {
+    try {
+      await matchService.enterWaitingPool(req.user.id);
+      res.status(200).json({ message: 'Successfully entered waiting pool' });
+    } catch (error) {
+      if (error.message === 'You cannot enter the waiting pool while having an active match.') {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ error: error.message });
+    }
+  }
 }
 
 module.exports = new MatchController();

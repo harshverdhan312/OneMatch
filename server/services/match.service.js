@@ -22,6 +22,7 @@ class MatchService {
     // 2. Get all completed profiles not in active matches
     const eligibleProfiles = await Profile.find({
       isComplete: true,
+      inWaitingPool: true,
       userId: { $nin: Array.from(matchedUserIds) }
     });
 
@@ -75,6 +76,11 @@ class MatchService {
           overlapDetails: bestOverlap,
           status: 'pending'
         });
+
+        await Profile.updateMany(
+          { userId: { $in: [user1.userId, bestCandidate.userId] } },
+          { $set: { inWaitingPool: false } }
+        );
 
         freshlyMatched.add(user1.userId.toString());
         freshlyMatched.add(bestCandidate.userId.toString());
@@ -168,6 +174,22 @@ class MatchService {
       status: { $in: ['pending', 'matched'] }
     });
     return match;
+  }
+
+  // Enter Waiting Pool
+  async enterWaitingPool(userId) {
+    const profile = await Profile.findOne({ userId });
+    if (!profile) throw new Error('Profile not found');
+    
+    // Check if already in an active match
+    const activeMatch = await this.getCurrentMatch(userId);
+    if (activeMatch) {
+      throw new Error('You cannot enter the waiting pool while having an active match.');
+    }
+
+    profile.inWaitingPool = true;
+    await profile.save();
+    return profile;
   }
 }
 

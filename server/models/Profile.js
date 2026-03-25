@@ -45,6 +45,10 @@ const profileSchema = new mongoose.Schema({
   isComplete: {
     type: Boolean,
     default: false
+  },
+  inWaitingPool: {
+    type: Boolean,
+    default: false
   }
 }, { timestamps: true });
 
