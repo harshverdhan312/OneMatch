@@ -160,6 +160,74 @@ class MatchService {
       match.status = 'declined';
     } else if (match.user1Action === 'accepted' && match.user2Action === 'accepted') {
       match.status = 'matched';
+      match.matchedAt = new Date();
+    }
+
+    await match.save();
+    return match;
+  }
+
+  // Process pending check-ins for all active matches
+  async processCheckIns() {
+    const now = new Date();
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    // 1. Handle 24h check-ins
+    const pending24h = await Match.find({
+      status: 'matched',
+      matchedAt: { $lte: twentyFourHoursAgo },
+      'checkIns.check24h.status': 'pending'
+    });
+
+    for (const match of pending24h) {
+      match.checkIns.check24h.status = 'sent';
+      match.checkIns.check24h.sentAt = now;
+      await match.save();
+      console.log(`24h check-in sent for match ${match._id}`);
+    }
+
+    // 2. Handle 1w check-ins
+    const pending1w = await Match.find({
+      status: 'matched',
+      matchedAt: { $lte: oneWeekAgo },
+      'checkIns.check1w.status': 'pending'
+    });
+
+    for (const match of pending1w) {
+      match.checkIns.check1w.status = 'sent';
+      match.checkIns.check1w.sentAt = now;
+      await match.save();
+      console.log(`1w check-in sent for match ${match._id}`);
+    }
+  }
+
+  // Respond to a check-in
+  async respondToCheckIn(userId, matchId, checkType, response) {
+    const match = await Match.findById(matchId);
+    if (!match) throw new Error('Match not found');
+
+    const checkKey = checkType === '24h' ? 'check24h' : 'check1w';
+    const check = match.checkIns[checkKey];
+
+    if (check.status !== 'sent') {
+      throw new Error('Check-in not active or already completed');
+    }
+
+    if (match.user1.toString() === userId.toString()) {
+      check.user1Response = response;
+    } else if (match.user2.toString() === userId.toString()) {
+      check.user2Response = response;
+    } else {
+      throw new Error('Not authorized');
+    }
+
+    // If either user says move_on, the match is dissolved
+    if (response === 'move_on') {
+      match.status = 'dissolved';
+      check.status = 'completed';
+    } else if (check.user1Response === 'yes' && check.user2Response === 'yes') {
+      check.status = 'completed';
     }
 
     await match.save();
@@ -174,6 +242,34 @@ class MatchService {
       status: { $in: ['pending', 'matched'] }
     });
     return match;
+  }
+
+  // Check if user has a pending check-in they must respond to
+  async getPendingCheckIn(userId) {
+    const match = await Match.findOne({
+      $or: [{ user1: userId }, { user2: userId }],
+      status: 'matched'
+    });
+
+    if (!match) return null;
+
+    // Check 24h
+    if (match.checkIns.check24h.status === 'sent') {
+      const hasResponded = match.user1.toString() === userId.toString() 
+        ? match.checkIns.check24h.user1Response 
+        : match.checkIns.check24h.user2Response;
+      if (!hasResponded) return { matchId: match._id, checkType: '24h' };
+    }
+
+    // Check 1w
+    if (match.checkIns.check1w.status === 'sent') {
+      const hasResponded = match.user1.toString() === userId.toString() 
+        ? match.checkIns.check1w.user1Response 
+        : match.checkIns.check1w.user2Response;
+      if (!hasResponded) return { matchId: match._id, checkType: '1w' };
+    }
+
+    return null;
   }
 
   // Enter Waiting Pool

@@ -48,6 +48,25 @@ class MatchController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  async respondToCheckIn(req, res) {
+    try {
+      const { id } = req.params;
+      const { checkType, response } = req.body; // checkType: '24h' or '1w', response: 'yes' or 'move_on'
+      
+      if (!['24h', '1w'].includes(checkType)) {
+        return res.status(400).json({ message: 'Invalid checkType' });
+      }
+      if (!['yes', 'move_on'].includes(response)) {
+        return res.status(400).json({ message: 'Invalid response' });
+      }
+
+      const match = await matchService.respondToCheckIn(req.user.id, id, checkType, response);
+      res.status(200).json({ message: 'Check-in response recorded', match });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 }
 
 module.exports = new MatchController();

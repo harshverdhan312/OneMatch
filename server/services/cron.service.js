@@ -11,6 +11,17 @@ const startCronJobs = () => {
       console.error('Error generating matches via cron:', error);
     }
   });
+  
+  // Run every hour to process check-ins
+  cron.schedule('0 * * * *', async () => {
+    console.log('Running check-in processing cron job...');
+    try {
+      await matchService.processCheckIns();
+    } catch (error) {
+      console.error('Error processing check-ins via cron:', error);
+    }
+  });
+
   console.log('Cron jobs scheduled.');
 };
 
