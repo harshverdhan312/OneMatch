@@ -32,25 +32,11 @@ const matchSchema = new mongoose.Schema({
   },
   status: { 
     type: String, 
-    enum: ['pending', 'matched', 'declined', 'dissolved'], 
+    enum: ['pending', 'matched', 'chatting', 'declined', 'dissolved'], 
     default: 'pending' 
   },
   matchedAt: {
     type: Date
-  },
-  checkIns: {
-    check24h: {
-      status: { type: String, enum: ['pending', 'sent', 'completed'], default: 'pending' },
-      user1Response: { type: String, enum: ['yes', 'move_on'] },
-      user2Response: { type: String, enum: ['yes', 'move_on'] },
-      sentAt: Date
-    },
-    check1w: {
-      status: { type: String, enum: ['pending', 'sent', 'completed'], default: 'pending' },
-      user1Response: { type: String, enum: ['yes', 'move_on'] },
-      user2Response: { type: String, enum: ['yes', 'move_on'] },
-      sentAt: Date
-    }
   }
 }, { timestamps: true });
 

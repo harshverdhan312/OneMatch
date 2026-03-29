@@ -46,6 +46,21 @@ class AuthService {
 
     return { accessToken, refreshToken };
   }
+
+  async verifyRefreshToken(token) {
+    try {
+      const decoded = jwt.verify(token, REFRESH_TOKEN_SECRET);
+      const user = await User.findById(decoded.userId);
+      if (!user) throw new Error('User not found');
+      return user;
+    } catch (error) {
+      throw new Error('Invalid refresh token');
+    }
+  }
+
+  async findUserById(userId) {
+    return await User.findById(userId).select('-password');
+  }
 }
 
 module.exports = new AuthService();

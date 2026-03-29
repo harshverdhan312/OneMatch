@@ -12,6 +12,7 @@ router.put('/basic-info', profileController.saveBasicInfo.bind(profileController
 router.put('/preferences', profileController.savePreferences.bind(profileController));
 router.put('/interests', profileController.saveInterests.bind(profileController));
 router.put('/questions', profileController.saveQuestions.bind(profileController));
+router.put('/step/:step', profileController.saveStep.bind(profileController));
 router.put('/spotify', profileController.connectSpotify.bind(profileController));
 
 router.patch('/', profileController.editProfile.bind(profileController));

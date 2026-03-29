@@ -1,7 +1,7 @@
 const authService = require('../services/auth.service');
 
 class AuthController {
-  async signup(req, res) {
+  async register(req, res, next) {
     try {
       const { email, password } = req.body;
       if (!email || !password) {
@@ -12,19 +12,16 @@ class AuthController {
       const tokens = authService.generateTokens(user);
 
       res.status(201).json({
-        message: 'User created successfully',
+        message: 'User registered successfully',
         user: { id: user._id, email: user.email, matchState: user.matchState },
         tokens
       });
     } catch (error) {
-      if (error.message === 'Email already in use') {
-        return res.status(409).json({ error: error.message });
-      }
-      res.status(500).json({ error: 'Internal server error' });
+      next(error);
     }
   }
 
-  async login(req, res) {
+  async login(req, res, next) {
     try {
       const { email, password } = req.body;
       if (!email || !password) {
@@ -40,10 +37,32 @@ class AuthController {
         tokens
       });
     } catch (error) {
-      if (error.message === 'Invalid credentials') {
-        return res.status(401).json({ error: error.message });
+      next(error);
+    }
+  }
+
+  async refresh(req, res, next) {
+    try {
+      const { refreshToken } = req.body;
+      if (!refreshToken) {
+        return res.status(400).json({ error: 'Refresh token required' });
       }
-      res.status(500).json({ error: 'Internal server error' });
+
+      const user = await authService.verifyRefreshToken(refreshToken);
+      const tokens = authService.generateTokens(user);
+
+      res.status(200).json({ tokens });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getMe(req, res, next) {
+    try {
+      const user = await authService.findUserById(req.user.userId);
+      res.status(200).json({ user });
+    } catch (error) {
+      next(error);
     }
   }
 }
